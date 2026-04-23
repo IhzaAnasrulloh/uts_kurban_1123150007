@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
 import 'package:uts_kurban_1123150007/core/constants/api_constants.dart';
 import 'package:uts_kurban_1123150007/core/constants/secure_storage.dart';
 import 'package:uts_kurban_1123150007/core/services/dio_client.dart';
@@ -18,24 +20,61 @@ class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
 
-  // ─── State ───────────────────────────────────────────────
   AuthStatus _status = AuthStatus.initial;
   User? _firebaseUser;
   String? _backendToken;
   String? _errorMessage;
+  bool _disposed = false;
 
-  // Tambahan (FIX BUG)
   String? _tempEmail;
   String? _tempPassword;
 
-  // ─── Getters ─────────────────────────────────────────────
   AuthStatus get status => _status;
   User? get firebaseUser => _firebaseUser;
   String? get backendToken => _backendToken;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _status == AuthStatus.loading;
 
-  // ─── Register ────────────────────────────────────────────
+  // 🔥 LISTENER (PENTING BANGET)
+  AuthProvider() {
+    _auth.authStateChanges().listen((user) {
+      _firebaseUser = user;
+
+      if (user == null) {
+        _status = AuthStatus.unauthenticated;
+      } else if (!user.emailVerified) {
+        _status = AuthStatus.emailNotVerified;
+      } else {
+        _status = AuthStatus.authenticated;
+      }
+
+      _safeNotify();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  void _setLoading() {
+    _status = AuthStatus.loading;
+    _errorMessage = null;
+    _safeNotify();
+  }
+
+  void _setError(String message) {
+    _status = AuthStatus.error;
+    _errorMessage = message;
+    _safeNotify();
+  }
+
+  // ================= REGISTER =================
   Future<bool> register({
     required String name,
     required String email,
@@ -49,6 +88,7 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _firebaseUser = credential.user;
+
       await _firebaseUser?.updateDisplayName(name);
       await _firebaseUser?.sendEmailVerification();
 
@@ -56,68 +96,19 @@ class AuthProvider extends ChangeNotifier {
       _tempPassword = password;
 
       _status = AuthStatus.emailNotVerified;
-      notifyListeners();
+      _safeNotify();
+
       return true;
     } on FirebaseAuthException catch (e) {
       _setError(_mapFirebaseError(e.code));
       return false;
-    }
-  }
-
-  // ─── Login setelah verifikasi email ──────────────────────
-  Future<bool> loginAfterEmailVerification() async {
-    _setLoading();
-    try {
-      await _firebaseUser?.reload();
-      _firebaseUser = _auth.currentUser;
-
-      if (!(_firebaseUser?.emailVerified ?? false)) {
-        _status = AuthStatus.emailNotVerified;
-        notifyListeners();
-        return false;
-      }
-
-      final credential = await _auth.signInWithEmailAndPassword(
-        email: _tempEmail!,
-        password: _tempPassword!,
-      );
-
-      _firebaseUser = credential.user;
-      _tempEmail = null;
-      _tempPassword = null;
-
-      return await _verifyTokenToBackend();
     } catch (e) {
-      _setError('Gagal login ulang: $e');
+      _setError('Terjadi kesalahan tidak terduga');
       return false;
     }
   }
 
-  // ─── Verifikasi ke Backend ───────────────────────────────
-  Future<bool> _verifyTokenToBackend() async {
-    try {
-      final firebaseToken = await _firebaseUser?.getIdToken();
-
-      final response = await DioClient.instance.post(
-        ApiConstants.verifyToken,
-        data: {'firebase_token': firebaseToken},
-      );
-
-      final data = response.data['data'];
-      _backendToken = data['access_token'];
-
-      await SecureStorageService.saveToken(_backendToken!);
-
-      _status = AuthStatus.authenticated;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _setError('Gagal verifikasi token: $e');
-      return false;
-    }
-  }
-
-  // ─── Login Email ─────────────────────────────────────────
+  // ================= LOGIN EMAIL =================
   Future<bool> loginWithEmail({
     required String email,
     required String password,
@@ -133,18 +124,24 @@ class AuthProvider extends ChangeNotifier {
 
       if (!(_firebaseUser?.emailVerified ?? false)) {
         _status = AuthStatus.emailNotVerified;
-        notifyListeners();
+        _safeNotify();
         return false;
       }
 
-      return await _verifyTokenToBackend();
+      _status = AuthStatus.authenticated;
+      _safeNotify();
+
+      return true; // 🔥 jangan tunggu backend dulu
     } on FirebaseAuthException catch (e) {
       _setError(_mapFirebaseError(e.code));
+      return false;
+    } catch (e) {
+      _setError('Terjadi kesalahan tidak terduga');
       return false;
     }
   }
 
-  // ─── Login Google ────────────────────────────────────────
+  // ================= LOGIN GOOGLE =================
   Future<bool> loginWithGoogle() async {
     _setLoading();
     try {
@@ -163,32 +160,47 @@ class AuthProvider extends ChangeNotifier {
       );
 
       final userCred = await _auth.signInWithCredential(credential);
+
       _firebaseUser = userCred.user;
 
-      return await _verifyTokenToBackend();
+      _status = AuthStatus.authenticated;
+      _safeNotify();
+
+      return true;
     } catch (e) {
       _setError('Gagal login Google: $e');
       return false;
     }
   }
 
-  // ─── Resend Email ────────────────────────────────────────
+  // ================= RESEND EMAIL =================
   Future<void> resendVerificationEmail() async {
-    await _firebaseUser?.sendEmailVerification();
-  }
-
-  // ─── Check Email Verified ────────────────────────────────
-  Future<bool> checkEmailVerified() async {
-    await _firebaseUser?.reload();
-    _firebaseUser = _auth.currentUser;
-
-    if (_firebaseUser?.emailVerified ?? false) {
-      return await _verifyTokenToBackend();
+    try {
+      await _firebaseUser?.sendEmailVerification();
+    } catch (e) {
+      _setError('Gagal kirim ulang email');
     }
-    return false;
   }
 
-  // ─── Logout ──────────────────────────────────────────────
+  // ================= CHECK VERIFY (🔥 PALING PENTING) =================
+  Future<bool> checkEmailVerified() async {
+    try {
+      await _firebaseUser?.reload(); // 🔥 WAJIB
+      _firebaseUser = _auth.currentUser;
+
+      if (_firebaseUser?.emailVerified ?? false) {
+        _status = AuthStatus.authenticated; // 🔥 WAJIB
+        _safeNotify();
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ================= LOGOUT =================
   Future<void> logout() async {
     await _auth.signOut();
     await googleSignIn.signOut();
@@ -198,22 +210,10 @@ class AuthProvider extends ChangeNotifier {
     _backendToken = null;
     _status = AuthStatus.unauthenticated;
 
-    notifyListeners();
+    _safeNotify();
   }
 
-  // ─── Helpers ─────────────────────────────────────────────
-  void _setLoading() {
-    _status = AuthStatus.loading;
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  void _setError(String message) {
-    _status = AuthStatus.error;
-    _errorMessage = message;
-    notifyListeners();
-  }
-
+  // ================= ERROR MAPPER =================
   String _mapFirebaseError(String code) => switch (code) {
         'email-already-in-use' => 'Email sudah terdaftar.',
         'user-not-found' => 'Akun tidak ditemukan.',
@@ -221,6 +221,8 @@ class AuthProvider extends ChangeNotifier {
         'invalid-email' => 'Format email tidak valid.',
         'weak-password' => 'Password terlalu lemah.',
         'network-request-failed' => 'Tidak ada koneksi internet.',
+        'too-many-requests' => 'Terlalu banyak percobaan.',
+        'user-disabled' => 'Akun dinonaktifkan.',
         _ => 'Terjadi kesalahan.',
       };
 }

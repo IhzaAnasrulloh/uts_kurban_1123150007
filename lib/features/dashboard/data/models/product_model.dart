@@ -23,14 +23,16 @@ class ProductModel extends Equatable {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      description: json['description'] ?? '',
-      price: (json['price'] as num).toDouble(),
-      stock: json['stock'] ?? 0,
-      category: json['category'] ?? '',
-      imageUrl: json['image_url'] ?? '',
-      isActive: json['is_active'] ?? true,
+      // ✅ Handle both 'id' and 'ID' (GORM returns 'ID')
+      id: (json['ID'] ?? json['id'] ?? 0) as int,
+      name: (json['name'] ?? json['Name'] ?? '') as String,
+      description: (json['description'] ?? json['Description'] ?? '') as String,
+      // ✅ Handle price sebagai int atau double
+      price: (json['price'] ?? json['Price'] ?? 0).toDouble(),
+      stock: (json['stock'] ?? json['Stock'] ?? 0) as int,
+      category: (json['category'] ?? json['Category'] ?? '') as String,
+      imageUrl: (json['image_url'] ?? json['ImageURL'] ?? '') as String,
+      isActive: (json['is_active'] ?? json['IsActive'] ?? true) as bool,
     );
   }
 

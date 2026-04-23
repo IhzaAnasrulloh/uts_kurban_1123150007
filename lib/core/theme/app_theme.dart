@@ -41,11 +41,11 @@ class AppTheme {
         fillColor: AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(color: const Color.fromARGB(255, 252, 250, 250)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(color: const Color.fromARGB(255, 255, 254, 254)),
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
@@ -57,7 +57,7 @@ class AppTheme {
 
       textTheme: const TextTheme(
         titleLarge: TextStyle(fontWeight: FontWeight.bold),
-        bodyMedium: TextStyle(color: Colors.black87),
+        bodyMedium: TextStyle(color: Color.fromARGB(221, 255, 255, 255)),
       ),
     );
   }

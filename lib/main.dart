@@ -6,7 +6,6 @@ import 'package:uts_kurban_1123150007/core/theme/app_theme.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/product_provider.dart';
 
-
 import 'firebase_options.dart';
 
 void main() async {
@@ -15,6 +14,7 @@ void main() async {
   await fb.Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(
     MultiProvider(
       providers: [
@@ -32,10 +32,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Paket Alat Pancing',
+      title: 'Paket Kurban',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      initialRoute: AppRouter.splash,
+
+      // ✅ Langsung mulai dari login, bukan splash yang tidak ada
+      initialRoute: AppRouter.login,
       routes: AppRouter.routes,
     );
   }

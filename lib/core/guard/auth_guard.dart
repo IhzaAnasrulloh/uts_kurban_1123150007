@@ -1,22 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uts_kurban_1123150007/features/auth/presentation/pages/login_page.dart';
-import 'package:uts_kurban_1123150007/features/auth/presentation/pages/verify_email_page.dart';
+import 'package:uts_kurban_1123150007/core/routes/app_router.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/auth_provider.dart';
 
-class AuthGuard extends StatelessWidget { 
-  final Widget child; 
-  const AuthGuard({super.key, required this.child}); 
- 
-  @override 
-  Widget build(BuildContext context) { 
-    final status = context.watch<AuthProvider>().status; 
- 
-    return switch (status) { 
-      AuthStatus.authenticated => child,           // Lanjut ke halaman 
-      AuthStatus.emailNotVerified => 
-        const VerifyEmailPage(),                   // Redirect verifikasi 
-      _ => const LoginPage(),                     // Redirect login 
-    }; 
-  } 
-} 
+class AuthGuard extends StatefulWidget {
+  final Widget child;
+  const AuthGuard({super.key, required this.child});
+
+  @override
+  State<AuthGuard> createState() => _AuthGuardState();
+}
+
+class _AuthGuardState extends State<AuthGuard> {
+  AuthStatus? _lastStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        // Hanya navigasi jika status BERUBAH — mencegah infinite loop
+        if (auth.status != _lastStatus) {
+          _lastStatus = auth.status;
+
+          if (auth.status == AuthStatus.unauthenticated ||
+              auth.status == AuthStatus.error) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(context, AppRouter.login);
+            });
+          } else if (auth.status == AuthStatus.emailNotVerified) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(context, AppRouter.verifyEmail);
+            });
+          }
+        }
+
+        if (auth.status == AuthStatus.initial ||
+            auth.status == AuthStatus.loading) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF121212),
+            body: Center(
+              child: CircularProgressIndicator(color: Colors.purpleAccent),
+            ),
+          );
+        }
+
+        if (auth.status == AuthStatus.authenticated) {
+          return widget.child;
+        }
+
+        return const Scaffold(
+          backgroundColor: Color(0xFF121212),
+          body: Center(
+            child: CircularProgressIndicator(color: Colors.purpleAccent),
+          ),
+        );
+      },
+    );
+  }
+}

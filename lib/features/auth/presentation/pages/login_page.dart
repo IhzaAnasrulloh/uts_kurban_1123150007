@@ -32,7 +32,6 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // 🔐 Login Email
   Future<void> _loginEmail() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -48,7 +47,6 @@ class _LoginPageState extends State<LoginPage> {
     _handleLoginResult(ok, auth);
   }
 
-  // 🔐 Login Google
   Future<void> _loginGoogle() async {
     final auth = context.read<AuthProvider>();
 
@@ -59,8 +57,8 @@ class _LoginPageState extends State<LoginPage> {
     _handleLoginResult(ok, auth);
   }
 
-  // 🔐 Handle Result
   void _handleLoginResult(bool ok, AuthProvider auth) {
+    if (!mounted) return; // ✅ Tambahan guard
     if (ok) {
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
     } else if (auth.status == AuthStatus.emailNotVerified) {
@@ -100,7 +98,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 32),
 
-                  // Email
                   CustomTextField(
                     label: 'Email',
                     hint: 'contoh@email.com',
@@ -118,7 +115,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 16),
 
-                  // Password
                   CustomTextField(
                     label: 'Password',
                     hint: 'Masukkan password',
@@ -127,9 +123,7 @@ class _LoginPageState extends State<LoginPage> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _showPass
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                        _showPass ? Icons.visibility_off : Icons.visibility,
                       ),
                       onPressed: () =>
                           setState(() => _showPass = !_showPass),
@@ -140,19 +134,16 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 8),
 
-                  // Lupa Password
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () =>
-                          _showForgotPasswordDialog(context),
+                      onPressed: () => _showForgotPasswordDialog(context),
                       child: const Text('Lupa Password?'),
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
-                  // Button Login
                   CustomButton(
                     label: 'Masuk',
                     onPressed: _loginEmail,
@@ -165,7 +156,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
-                  // Google
                   GoogleSignInButton(
                     onPressed: _loginGoogle,
                     isLoading: isLoading,
@@ -173,7 +163,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 24),
 
-                  // Register
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -186,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: const Text(
                           'Daftar',
                           style: TextStyle(
-                            color: Color(0xFFAB47BC), // ungu biar konsisten
+                            color: Color(0xFFAB47BC),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -202,13 +191,12 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // 🔁 Forgot Password
   void _showForgotPasswordDialog(BuildContext context) {
     final ctrl = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog( // ✅ Pakai dialogContext terpisah
         title: const Text('Reset Password'),
         content: CustomTextField(
           label: 'Email',
@@ -218,15 +206,15 @@ class _LoginPageState extends State<LoginPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Batal'),
           ),
           ElevatedButton(
             onPressed: () async {
+              final email = ctrl.text.trim();
+              Navigator.pop(dialogContext); // ✅ Pop dulu sebelum await
               await fb.FirebaseAuth.instance
-                  .sendPasswordResetEmail(email: ctrl.text.trim());
-
-              if (context.mounted) Navigator.pop(context);
+                  .sendPasswordResetEmail(email: email);
             },
             child: const Text('Kirim'),
           ),
