@@ -2,6 +2,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:uts_kurban_1123150007/core/routes/app_router.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/widgets/auth_header.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/widgets/custom_button.dart';
