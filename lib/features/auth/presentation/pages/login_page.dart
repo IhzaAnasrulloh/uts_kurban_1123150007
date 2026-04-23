@@ -32,11 +32,11 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // ─── Login Email ─────────────────────────────────────────
+  // 🔐 Login Email
   Future<void> _loginEmail() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final auth = context.read<fb.AuthProvider>();
+    final auth = context.read<AuthProvider>();
 
     final ok = await auth.loginWithEmail(
       email: _emailCtrl.text.trim(),
@@ -48,9 +48,9 @@ class _LoginPageState extends State<LoginPage> {
     _handleLoginResult(ok, auth);
   }
 
-  // ─── Login Google ────────────────────────────────────────
+  // 🔐 Login Google
   Future<void> _loginGoogle() async {
-    final auth = context.read<fb.AuthProvider>();
+    final auth = context.read<AuthProvider>();
 
     final ok = await auth.loginWithGoogle();
 
@@ -59,8 +59,8 @@ class _LoginPageState extends State<LoginPage> {
     _handleLoginResult(ok, auth);
   }
 
-  // ─── Handle Result ───────────────────────────────────────
-  void _handleLoginResult(bool ok, fb.AuthProvider auth) {
+  // 🔐 Handle Result
+  void _handleLoginResult(bool ok, AuthProvider auth) {
     if (ok) {
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
     } else if (auth.status == AuthStatus.emailNotVerified) {
@@ -161,12 +161,11 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
-                  // Divider
                   const DividerWithText(text: 'atau masuk dengan'),
 
                   const SizedBox(height: 20),
 
-                  // Google Sign In
+                  // Google
                   GoogleSignInButton(
                     onPressed: _loginGoogle,
                     isLoading: isLoading,
@@ -187,7 +186,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: const Text(
                           'Daftar',
                           style: TextStyle(
-                            color: Color(0xFF1565C0),
+                            color: Color(0xFFAB47BC), // ungu biar konsisten
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -203,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ─── Forgot Password Dialog ──────────────────────────────
+  // 🔁 Forgot Password
   void _showForgotPasswordDialog(BuildContext context) {
     final ctrl = TextEditingController();
 
@@ -224,11 +223,11 @@ class _LoginPageState extends State<LoginPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-            await fb.FirebaseAuth.instance
-                .sendPasswordResetEmail(email: ctrl.text.trim());
+              await fb.FirebaseAuth.instance
+                  .sendPasswordResetEmail(email: ctrl.text.trim());
 
-            if (context.mounted) Navigator.pop(context);
-          },
+              if (context.mounted) Navigator.pop(context);
+            },
             child: const Text('Kirim'),
           ),
         ],
