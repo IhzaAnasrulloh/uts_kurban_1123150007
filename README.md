@@ -6,4 +6,4 @@
 - Nim    = 1123150007
 - Kelas  = TI 23 SE 1
 - konsentrasi = Software Engineer
-- Link Presentasi = [Klik di sini]()
+- Link Presentasi = [Klik di sini](https://youtu.be/ynkgpBJqimc)
