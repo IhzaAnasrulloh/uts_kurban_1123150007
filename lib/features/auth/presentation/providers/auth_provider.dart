@@ -5,6 +5,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:uts_kurban_1123150007/core/constants/api_constants.dart';
 import 'package:uts_kurban_1123150007/core/constants/secure_storage.dart';
+import 'package:uts_kurban_1123150007/core/services/biometric_exception.dart';
+import 'package:uts_kurban_1123150007/core/services/biometric_service.dart'; // 🔥 TAMBAH INI
 import 'package:uts_kurban_1123150007/core/services/dio_client.dart';
 
 enum AuthStatus {
@@ -19,12 +21,14 @@ enum AuthStatus {
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
+  final BiometricService _biometricService = BiometricService(); // 🔥 TAMBAH INI
 
   AuthStatus _status = AuthStatus.initial;
   User? _firebaseUser;
   String? _backendToken;
   String? _errorMessage;
   bool _disposed = false;
+  bool _biometricAvailable = false; // 🔥 TAMBAH INI
 
   String? _tempEmail;
   String? _tempPassword;
@@ -34,6 +38,7 @@ class AuthProvider extends ChangeNotifier {
   String? get backendToken => _backendToken;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _status == AuthStatus.loading;
+  bool get biometricAvailable => _biometricAvailable; // 🔥 TAMBAH INI
 
   AuthProvider() {
     _auth.authStateChanges().listen((user) async {
@@ -45,11 +50,17 @@ class AuthProvider extends ChangeNotifier {
       } else if (!user.emailVerified) {
         _status = AuthStatus.emailNotVerified;
       }
-      // ⚠️ Jangan set authenticated di sini
-      // biar login method yang handle setelah verify ke backend
 
       _safeNotify();
     });
+
+    _checkBiometricAvailability(); // 🔥 TAMBAH INI
+  }
+
+  // 🔥 TAMBAH METHOD INI
+  Future<void> _checkBiometricAvailability() async {
+    _biometricAvailable = await _biometricService.isBiometricAvailable();
+    _safeNotify();
   }
 
   @override
@@ -77,11 +88,9 @@ class AuthProvider extends ChangeNotifier {
   // ================= 🔥 VERIFY TOKEN KE BACKEND =================
   Future<bool> _verifyTokenToBackend(User user) async {
     try {
-      // 1. Ambil Firebase ID Token
       final firebaseIdToken = await user.getIdToken(true);
       debugPrint('[AUTH] Firebase ID Token didapat');
 
-      // 2. Kirim ke backend dengan field "firebase_token"
       final response = await DioClient.instance.post(
         ApiConstants.verifyToken,
         data: {'firebase_token': firebaseIdToken},
@@ -89,7 +98,6 @@ class AuthProvider extends ChangeNotifier {
 
       debugPrint('[AUTH] Backend response: ${response.data}');
 
-      // 3. Ambil JWT dari response.data.access_token
       final backendJwt = response.data['data']?['access_token'];
 
       if (backendJwt == null) {
@@ -98,7 +106,6 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      // 4. Simpan JWT backend ke SecureStorage
       await SecureStorageService.saveToken(backendJwt);
       _backendToken = backendJwt;
       debugPrint('[AUTH] Backend JWT tersimpan!');
@@ -115,7 +122,39 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ================= REGISTER =================
+  // ================= 🔥 LOGIN BIOMETRIC (METHOD BARU) =================
+  Future<bool> loginWithBiometric() async {
+    _setLoading();
+    try {
+      await _biometricService.authenticate(
+        reason: 'Masuk ke Dashboard Kurban',
+      );
+
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        _setError('Tidak ada sesi login sebelumnya. Silakan login terlebih dahulu.');
+        return false;
+      }
+
+      _firebaseUser = currentUser;
+
+      final success = await _verifyTokenToBackend(currentUser);
+      if (!success) return false;
+
+      _status = AuthStatus.authenticated;
+      _safeNotify();
+
+      return true;
+    } on BiometricException catch (e) {
+      _setError(e.userMessage);
+      return false;
+    } catch (e) {
+      _setError('Gagal autentikasi biometrik');
+      return false;
+    }
+  }
+
+  // ================= REGISTER (TIDAK BERUBAH) =================
   Future<bool> register({
     required String name,
     required String email,
@@ -149,7 +188,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ================= LOGIN EMAIL =================
+  // ================= LOGIN EMAIL (TIDAK BERUBAH) =================
   Future<bool> loginWithEmail({
     required String email,
     required String password,
@@ -169,7 +208,6 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      // 🔥 Verify ke backend dan simpan JWT
       final success = await _verifyTokenToBackend(_firebaseUser!);
       if (!success) return false;
 
@@ -186,7 +224,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ================= LOGIN GOOGLE =================
+  // ================= LOGIN GOOGLE (TIDAK BERUBAH) =================
   Future<bool> loginWithGoogle() async {
     _setLoading();
     try {
@@ -207,7 +245,6 @@ class AuthProvider extends ChangeNotifier {
       final userCred = await _auth.signInWithCredential(credential);
       _firebaseUser = userCred.user;
 
-      // 🔥 Verify ke backend dan simpan JWT
       final success = await _verifyTokenToBackend(_firebaseUser!);
       if (!success) return false;
 
@@ -221,7 +258,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ================= RESEND EMAIL =================
+  // ================= RESEND EMAIL (TIDAK BERUBAH) =================
   Future<void> resendVerificationEmail() async {
     try {
       await _firebaseUser?.sendEmailVerification();
@@ -230,14 +267,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ================= CHECK VERIFY =================
+  // ================= CHECK VERIFY (TIDAK BERUBAH) =================
   Future<bool> checkEmailVerified() async {
     try {
       await _firebaseUser?.reload();
       _firebaseUser = _auth.currentUser;
 
       if (_firebaseUser?.emailVerified ?? false) {
-        // 🔥 Verify ke backend setelah email verified
         final success = await _verifyTokenToBackend(_firebaseUser!);
         if (!success) return false;
 
@@ -252,7 +288,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ================= LOGOUT =================
+  // ================= LOGOUT (TIDAK BERUBAH) =================
   Future<void> logout() async {
     await _auth.signOut();
     await googleSignIn.signOut();
@@ -265,7 +301,7 @@ class AuthProvider extends ChangeNotifier {
     _safeNotify();
   }
 
-  // ================= ERROR MAPPER =================
+  // ================= ERROR MAPPER (TIDAK BERUBAH) =================
   String _mapFirebaseError(String code) => switch (code) {
         'email-already-in-use' => 'Email sudah terdaftar.',
         'user-not-found' => 'Akun tidak ditemukan.',
