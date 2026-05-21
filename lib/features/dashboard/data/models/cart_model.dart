@@ -4,6 +4,7 @@ class CartProductModel {
   final double price;
   final String imageUrl;
   final String category;
+  final int stock;
 
   const CartProductModel({
     required this.id,
@@ -11,6 +12,7 @@ class CartProductModel {
     required this.price,
     required this.imageUrl,
     required this.category,
+    required this.stock,
   });
 
   factory CartProductModel.fromJson(Map<String, dynamic> json) =>
@@ -20,6 +22,7 @@ class CartProductModel {
         price: (json['price'] as num?)?.toDouble() ?? 0.0,
         imageUrl: json['image_url'] as String? ?? '',
         category: json['category'] as String? ?? '',
+        stock: json['stock'] as int? ?? 0,
       );
 }
 
@@ -39,16 +42,19 @@ class CartItemModel {
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    // Backend pakai "ID" (gorm.Model) — bukan "id"
+    final id = json['ID'] as int? ?? json['id'] as int? ?? 0;
+
     final product = CartProductModel.fromJson(
       json['product'] as Map<String, dynamic>? ?? {},
     );
     final quantity = json['quantity'] as int? ?? 0;
 
-    final apiSubtotal = (json['subtotal'] as num?)?.toDouble() ?? 0.0;
-    final subtotal = apiSubtotal > 0 ? apiSubtotal : product.price * quantity;
+    // Backend tidak kirim subtotal — hitung manual
+    final subtotal = product.price * quantity;
 
     return CartItemModel(
-      id: json['id'] as int? ?? 0,
+      id: id,
       productId: json['product_id'] as int? ?? 0,
       product: product,
       quantity: quantity,
@@ -73,13 +79,19 @@ class CartModel {
         .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    // Hitung total dari items, tidak bergantung field 'total' dari API
-    final total = items.fold<double>(0.0, (sum, i) => sum + i.subtotal);
+    // Backend kirim "total_price" dan "total_items"
+    final apiTotal = (json['total_price'] as num?)?.toDouble();
+    final total = apiTotal ?? items.fold<double>(0.0, (sum, i) => sum + i.subtotal);
+
+    final apiItemCount = json['total_items'] as int?;
+    // Hitung jumlah produk total (sum quantity), bukan jumlah jenis item
+    final itemCount = apiItemCount ??
+        items.fold<int>(0, (sum, i) => sum + i.quantity);
 
     return CartModel(
       items: items,
       total: total,
-      itemCount: json['item_count'] as int? ?? items.length,
+      itemCount: itemCount,
     );
   }
 }
