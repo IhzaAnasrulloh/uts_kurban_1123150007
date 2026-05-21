@@ -57,8 +57,19 @@ class _LoginPageState extends State<LoginPage> {
     _handleLoginResult(ok, auth);
   }
 
+  // 🔥 TAMBAH METHOD INI SAJA
+  Future<void> _loginBiometric() async {
+    final auth = context.read<AuthProvider>();
+
+    final ok = await auth.loginWithBiometric();
+
+    if (!mounted) return;
+
+    _handleLoginResult(ok, auth);
+  }
+
   void _handleLoginResult(bool ok, AuthProvider auth) {
-    if (!mounted) return; // ✅ Tambahan guard
+    if (!mounted) return;
     if (ok) {
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
     } else if (auth.status == AuthStatus.emailNotVerified) {
@@ -75,7 +86,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthProvider>().isLoading;
+    final auth = context.watch<AuthProvider>();
+    final isLoading = auth.isLoading;
 
     return LoadingOverlay(
       isLoading: isLoading,
@@ -161,6 +173,24 @@ class _LoginPageState extends State<LoginPage> {
                     isLoading: isLoading,
                   ),
 
+                  // 🔥 TAMBAH WIDGET INI SAJA — muncul hanya kalau biometric tersedia
+                  if (auth.biometricAvailable) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.purpleAccent,
+                        side: const BorderSide(color: Colors.purpleAccent),
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.fingerprint),
+                      label: const Text('Masuk dengan Biometrik'),
+                      onPressed: isLoading ? null : _loginBiometric,
+                    ),
+                  ],
+
                   const SizedBox(height: 24),
 
                   Row(
@@ -196,7 +226,7 @@ class _LoginPageState extends State<LoginPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog( // ✅ Pakai dialogContext terpisah
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Reset Password'),
         content: CustomTextField(
           label: 'Email',
@@ -212,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
           ElevatedButton(
             onPressed: () async {
               final email = ctrl.text.trim();
-              Navigator.pop(dialogContext); // ✅ Pop dulu sebelum await
+              Navigator.pop(dialogContext);
               await fb.FirebaseAuth.instance
                   .sendPasswordResetEmail(email: email);
             },
