@@ -42,6 +42,10 @@ android {
     }
 }
 
+dependencies {
+    implementation("androidx.fragment:fragment-ktx:1.6.2")  // ← WAJIB untuk local_auth v3
+}
+
 flutter {
     source = "../.."
 }

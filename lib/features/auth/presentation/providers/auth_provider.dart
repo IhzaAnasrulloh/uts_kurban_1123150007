@@ -35,18 +35,18 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _status == AuthStatus.loading;
 
-  // 🔥 LISTENER (PENTING BANGET)
   AuthProvider() {
-    _auth.authStateChanges().listen((user) {
+    _auth.authStateChanges().listen((user) async {
       _firebaseUser = user;
 
       if (user == null) {
         _status = AuthStatus.unauthenticated;
+        await SecureStorageService.clearAll();
       } else if (!user.emailVerified) {
         _status = AuthStatus.emailNotVerified;
-      } else {
-        _status = AuthStatus.authenticated;
       }
+      // ⚠️ Jangan set authenticated di sini
+      // biar login method yang handle setelah verify ke backend
 
       _safeNotify();
     });
@@ -72,6 +72,47 @@ class AuthProvider extends ChangeNotifier {
     _status = AuthStatus.error;
     _errorMessage = message;
     _safeNotify();
+  }
+
+  // ================= 🔥 VERIFY TOKEN KE BACKEND =================
+  Future<bool> _verifyTokenToBackend(User user) async {
+    try {
+      // 1. Ambil Firebase ID Token
+      final firebaseIdToken = await user.getIdToken(true);
+      debugPrint('[AUTH] Firebase ID Token didapat');
+
+      // 2. Kirim ke backend dengan field "firebase_token"
+      final response = await DioClient.instance.post(
+        ApiConstants.verifyToken,
+        data: {'firebase_token': firebaseIdToken},
+      );
+
+      debugPrint('[AUTH] Backend response: ${response.data}');
+
+      // 3. Ambil JWT dari response.data.access_token
+      final backendJwt = response.data['data']?['access_token'];
+
+      if (backendJwt == null) {
+        debugPrint('[AUTH] access_token tidak ditemukan di response');
+        _setError('Token backend tidak ditemukan');
+        return false;
+      }
+
+      // 4. Simpan JWT backend ke SecureStorage
+      await SecureStorageService.saveToken(backendJwt);
+      _backendToken = backendJwt;
+      debugPrint('[AUTH] Backend JWT tersimpan!');
+
+      return true;
+    } on DioException catch (e) {
+      debugPrint('[AUTH] Gagal verify token: ${e.response?.data}');
+      _setError('Gagal autentikasi ke server');
+      return false;
+    } catch (e) {
+      debugPrint('[AUTH] Error tidak terduga: $e');
+      _setError('Terjadi kesalahan tidak terduga');
+      return false;
+    }
   }
 
   // ================= REGISTER =================
@@ -128,10 +169,14 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
+      // 🔥 Verify ke backend dan simpan JWT
+      final success = await _verifyTokenToBackend(_firebaseUser!);
+      if (!success) return false;
+
       _status = AuthStatus.authenticated;
       _safeNotify();
 
-      return true; // 🔥 jangan tunggu backend dulu
+      return true;
     } on FirebaseAuthException catch (e) {
       _setError(_mapFirebaseError(e.code));
       return false;
@@ -160,8 +205,11 @@ class AuthProvider extends ChangeNotifier {
       );
 
       final userCred = await _auth.signInWithCredential(credential);
-
       _firebaseUser = userCred.user;
+
+      // 🔥 Verify ke backend dan simpan JWT
+      final success = await _verifyTokenToBackend(_firebaseUser!);
+      if (!success) return false;
 
       _status = AuthStatus.authenticated;
       _safeNotify();
@@ -182,14 +230,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ================= CHECK VERIFY (🔥 PALING PENTING) =================
+  // ================= CHECK VERIFY =================
   Future<bool> checkEmailVerified() async {
     try {
-      await _firebaseUser?.reload(); // 🔥 WAJIB
+      await _firebaseUser?.reload();
       _firebaseUser = _auth.currentUser;
 
       if (_firebaseUser?.emailVerified ?? false) {
-        _status = AuthStatus.authenticated; // 🔥 WAJIB
+        // 🔥 Verify ke backend setelah email verified
+        final success = await _verifyTokenToBackend(_firebaseUser!);
+        if (!success) return false;
+
+        _status = AuthStatus.authenticated;
         _safeNotify();
         return true;
       }
