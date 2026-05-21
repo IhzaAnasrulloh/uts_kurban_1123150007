@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uts_kurban_1123150007/core/guard/auth_guard.dart';
+import 'package:uts_kurban_1123150007/features/auth/presentation/pages/cart_page.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/pages/dashboard_page.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/pages/login_page.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/pages/register_page.dart';
@@ -11,6 +12,7 @@ class AppRouter {
   static const String register    = '/register';
   static const String verifyEmail = '/verify-email';
   static const String dashboard   = '/dashboard';
+  static const String cart         = '/cart'; 
 
   static Map<String, WidgetBuilder> get routes => {
     splash:      (_) => const LoginPage(),
@@ -18,5 +20,6 @@ class AppRouter {
     register:    (_) => const RegisterPage(),
     verifyEmail: (_) => const VerifyEmailPage(),
     dashboard:   (_) => AuthGuard(child: DashboardPage()),
+    cart:        (_) => const CartPage(),
   };
 }
