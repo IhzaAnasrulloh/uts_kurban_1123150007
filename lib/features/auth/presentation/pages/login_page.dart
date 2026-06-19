@@ -173,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                     isLoading: isLoading,
                   ),
 
-                  // 🔥 TAMBAH WIDGET INI SAJA — muncul hanya kalau biometric tersedia
+
                   if (auth.biometricAvailable) ...[
                     const SizedBox(height: 12),
                     OutlinedButton.icon(

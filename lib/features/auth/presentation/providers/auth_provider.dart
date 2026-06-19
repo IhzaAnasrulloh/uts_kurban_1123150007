@@ -28,7 +28,7 @@ class AuthProvider extends ChangeNotifier {
   String? _backendToken;
   String? _errorMessage;
   bool _disposed = false;
-  bool _biometricAvailable = false; // 🔥 TAMBAH INI
+  bool _biometricAvailable = false;
 
   String? _tempEmail;
   String? _tempPassword;
@@ -38,7 +38,7 @@ class AuthProvider extends ChangeNotifier {
   String? get backendToken => _backendToken;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _status == AuthStatus.loading;
-  bool get biometricAvailable => _biometricAvailable; // 🔥 TAMBAH INI
+  bool get biometricAvailable => _biometricAvailable; 
 
   AuthProvider() {
     _auth.authStateChanges().listen((user) async {
@@ -49,6 +49,14 @@ class AuthProvider extends ChangeNotifier {
         await SecureStorageService.clearAll();
       } else if (!user.emailVerified) {
         _status = AuthStatus.emailNotVerified;
+      } else {
+        // Automatically verify token and restore session on cold start
+        final success = await _verifyTokenToBackend(user);
+        if (success) {
+          _status = AuthStatus.authenticated;
+        } else {
+          _status = AuthStatus.error;
+        }
       }
 
       _safeNotify();
