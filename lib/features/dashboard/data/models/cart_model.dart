@@ -18,11 +18,11 @@ class CartProductModel {
   factory CartProductModel.fromJson(Map<String, dynamic> json) =>
       CartProductModel(
         id: json['ID'] as int? ?? json['id'] as int? ?? 0,
-        name: json['name'] as String? ?? '',
-        price: (json['price'] as num?)?.toDouble() ?? 0.0,
-        imageUrl: json['image_url'] as String? ?? '',
-        category: json['category'] as String? ?? '',
-        stock: json['stock'] as int? ?? 0,
+        name: (json['name'] ?? json['Name'] ?? '') as String,
+        price: ((json['price'] ?? json['Price'] ?? 0) as num).toDouble(),
+        imageUrl: (json['image_url'] ?? json['ImageURL'] ?? '') as String,
+        category: (json['category'] ?? json['Category'] ?? '') as String,
+        stock: (json['stock'] ?? json['Stock'] ?? 0) as int,
       );
 }
 
@@ -45,17 +45,18 @@ class CartItemModel {
     // Backend pakai "ID" (gorm.Model) — bukan "id"
     final id = json['ID'] as int? ?? json['id'] as int? ?? 0;
 
+    final productMap = json['product'] ?? json['Product'];
     final product = CartProductModel.fromJson(
-      json['product'] as Map<String, dynamic>? ?? {},
+      productMap as Map<String, dynamic>? ?? {},
     );
-    final quantity = json['quantity'] as int? ?? 0;
+    final quantity = (json['quantity'] ?? json['Quantity'] ?? 0) as int;
 
     // Backend tidak kirim subtotal — hitung manual
     final subtotal = product.price * quantity;
 
     return CartItemModel(
       id: id,
-      productId: json['product_id'] as int? ?? 0,
+      productId: (json['product_id'] ?? json['ProductID'] ?? 0) as int,
       product: product,
       quantity: quantity,
       subtotal: subtotal,

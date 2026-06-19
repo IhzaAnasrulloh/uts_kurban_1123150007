@@ -5,7 +5,9 @@ import 'package:uts_kurban_1123150007/features/auth/presentation/pages/dashboard
 import 'package:uts_kurban_1123150007/features/auth/presentation/pages/login_page.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/pages/register_page.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/pages/verify_email_page.dart';
-
+import 'package:uts_kurban_1123150007/features/order/presentation/pages/checkout_page.dart';
+import 'package:uts_kurban_1123150007/features/order/presentation/pages/payment_pending_page.dart';
+import 'package:uts_kurban_1123150007/features/order/presentation/pages/order_success_page.dart';
 class AppRouter {
   static const String splash      = '/';
   static const String login       = '/login';
@@ -13,13 +15,36 @@ class AppRouter {
   static const String verifyEmail = '/verify-email';
   static const String dashboard   = '/dashboard';
   static const String cart         = '/cart'; 
+  static const String checkout     = '/checkout';
+  static const String paymentPending = '/payment-pending';
+  static const String orderSuccess = '/order-success';
+
+  static Route<dynamic>? generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case paymentPending:
+        final args = settings.arguments as Map<String, dynamic>?;
+        if (args != null) {
+          return MaterialPageRoute(
+            builder: (_) => PaymentPendingPage(
+              orderId: args['orderId'],
+              amount: args['amount'],
+            ),
+          );
+        }
+        return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Error PaymentPending'))));
+      default:
+        return null;
+    }
+  }
 
   static Map<String, WidgetBuilder> get routes => {
-    splash:      (_) => const LoginPage(),
+    splash:      (_) => const AuthGuard(child: DashboardPage()),
     login:       (_) => const LoginPage(),
     register:    (_) => const RegisterPage(),
     verifyEmail: (_) => const VerifyEmailPage(),
     dashboard:   (_) => AuthGuard(child: DashboardPage()),
     cart:        (_) => const CartPage(),
+    checkout:    (_) => const CheckoutPage(),
+    orderSuccess:(_) => const OrderSuccessPage(),
   };
 }

@@ -142,7 +142,7 @@ class _CartPageState extends State<CartPage> {
                 total: cart.total,
                 formatPrice: _formatPrice,
                 onCheckout: () {
-                  
+                  Navigator.pushNamed(context, AppRouter.checkout);
                 },
               ),
             ],
@@ -165,27 +165,34 @@ class _EmptyCartView extends StatelessWidget {
           Icon(
             Icons.shopping_cart_outlined,
             size: 80,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+            color: Colors.white.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             'Keranjang masih kosong',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Yuk tambahkan produk ke keranjang!',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             icon: const Icon(Icons.shopping_bag_outlined),
             label: const Text('Mulai Belanja'),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // Kalau bisa pop (karena dibuka dari dashboard), pop saja
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacementNamed(context, AppRouter.dashboard);
+              }
+            },
           ),
         ],
       ),
@@ -266,7 +273,7 @@ class _CartItemCard extends StatelessWidget {
                               item.product.category,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: onSurface.withValues(alpha: 0.5),
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -275,7 +282,7 @@ class _CartItemCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: onSurface,
+                                color: Colors.white,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -287,7 +294,7 @@ class _CartItemCard extends StatelessWidget {
                         icon: Icon(
                           Icons.delete_outline,
                           size: 20,
-                          color: onSurface.withValues(alpha: 0.4),
+                          color: Colors.white.withValues(alpha: 0.6),
                         ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -298,7 +305,7 @@ class _CartItemCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     formatPrice(item.product.price),
-                    style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.6)),
+                    style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -315,7 +322,7 @@ class _CartItemCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: onSurface,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -419,7 +426,7 @@ class _CartBottomBar extends StatelessWidget {
                 children: [
                   Text(
                     'Total',
-                    style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.5)),
+                    style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
                   ),
                   Text(
                     formatPrice(total),
