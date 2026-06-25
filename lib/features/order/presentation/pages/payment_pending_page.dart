@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import 'package:uts_kurban_1123150007/core/services/kurban_connect_service.dart';
 import 'package:uts_kurban_1123150007/core/routes/app_router.dart';
+import 'package:uts_kurban_1123150007/features/auth/presentation/providers/cart_provider.dart';
 
 class PaymentPendingPage extends StatefulWidget {
   final int orderId;
@@ -60,6 +62,9 @@ class _PaymentPendingPageState extends State<PaymentPendingPage> with WidgetsBin
   }
 
   void _onPaymentSuccess() {
+    if (mounted) {
+      context.read<CartProvider>().clearCart();
+    }
     Navigator.pushReplacementNamed(context, AppRouter.orderSuccess);
   }
 
