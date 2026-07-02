@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Pengembang
  * Ihza Anasrullah Bil Haq
  * 1123150007
@@ -124,3 +125,14 @@ Aplikasi kembali ke Kurban (pasarmalam://payment-callback/callback)
     ↓
 Halaman Sukses & Histori Ditambahkan (Keranjang Kosong)
 ```
+=======
+
+# Ujian Tengah Semester Aplikasi Mobile
+
+## Mahasiswa
+- Nama   = Ihza Anasrulloh
+- Nim    = 1123150007
+- Kelas  = TI 23 SE 1
+- konsentrasi = Software Engineer
+- Link Presentasi = [Klik di sini](https://youtu.be/ynkgpBJqimc)
+>>>>>>> 60efd7ee30a13dd197dc7dbeacb0562025373663
