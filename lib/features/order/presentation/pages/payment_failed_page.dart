@@ -1,45 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:uts_kurban_1123150007/core/routes/app_router.dart';
-import 'package:provider/provider.dart';
-import 'package:uts_kurban_1123150007/features/auth/presentation/providers/cart_provider.dart';
 
-class OrderSuccessPage extends StatefulWidget {
-  const OrderSuccessPage({super.key});
-
-  @override
-  State<OrderSuccessPage> createState() => _OrderSuccessPageState();
-}
-
-class _OrderSuccessPageState extends State<OrderSuccessPage> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Kosongkan keranjang saat order sukses
-      context.read<CartProvider>().clearCart();
-    });
-  }
+class PaymentFailedPage extends StatelessWidget {
+  final String message;
+  const PaymentFailedPage({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF121212), // AppColors.background
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.check_circle, size: 100, color: Colors.green),
+              const Icon(Icons.error_outline, size: 100, color: Color(0xFFCF6679)), // AppColors.error
               const SizedBox(height: 24),
               const Text(
-                'Pembayaran Berhasil!',
+                'Pembayaran Gagal',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Pesanan Anda sedang diproses.',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
               ),
               const SizedBox(height: 40),
               SizedBox(

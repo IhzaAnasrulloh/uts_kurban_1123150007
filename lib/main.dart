@@ -6,6 +6,7 @@ import 'package:uts_kurban_1123150007/core/theme/app_theme.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/cart_provider.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/product_provider.dart';
+import 'package:uts_kurban_1123150007/features/order/presentation/providers/history_provider.dart';
 import 'package:uts_kurban_1123150007/core/services/kurban_connect_service.dart';
 
 import 'firebase_options.dart';
@@ -25,6 +26,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => HistoryProvider()),
       ],
       child: const MyApp(),
     ),
