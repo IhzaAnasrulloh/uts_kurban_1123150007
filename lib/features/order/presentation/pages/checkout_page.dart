@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/cart_provider.dart';
+import 'package:uts_kurban_1123150007/features/order/presentation/providers/history_provider.dart';
 import 'package:uts_kurban_1123150007/core/routes/app_router.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -188,7 +189,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         return;
                       }
 
-                      final orderId = DateTime.now().millisecondsSinceEpoch;
+                      final historyProvider = context.read<HistoryProvider>();
+                      final orderId = historyProvider.orders.length + 1;
                       Navigator.pushNamed(
                         context, 
                         AppRouter.paymentPending,
