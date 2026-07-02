@@ -50,7 +50,7 @@ class KurbanConnectService {
     debugPrint('[KurbanConnectService] URI diterima: $uri');
     debugPrint('[KurbanConnectService] Cold start: $isColdStart');
 
-    if (uri.scheme == 'pasarmalam' && uri.host == 'payment-callback') {
+    if (uri.scheme == 'pasarmalam' && uri.host == 'payment-callback' && uri.path == '/callback') {
       final data = PaymentCallbackData(
         status: uri.queryParameters['status'] ?? 'unknown',
         reference: uri.queryParameters['reference'],
@@ -81,7 +81,7 @@ class KurbanConnectService {
             ? description
             : 'Order #$orderId',
         'reference': 'INV-$orderId',
-        'callback': 'pasarmalam://payment-callback',
+        'callback': 'pasarmalam://payment-callback/callback',
       },
     );
     return uri.toString();

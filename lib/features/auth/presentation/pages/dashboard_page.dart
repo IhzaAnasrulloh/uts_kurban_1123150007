@@ -4,6 +4,7 @@ import 'package:uts_kurban_1123150007/core/routes/app_router.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/cart_provider.dart';
 import 'package:uts_kurban_1123150007/features/auth/presentation/providers/product_provider.dart';
+import 'package:uts_kurban_1123150007/core/services/kurban_connect_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,8 +19,20 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchProducts();
-      // Fetch cart juga supaya badge muncul
       context.read<CartProvider>().fetchCart();
+      
+      final pending = KurbanConnectService().consumePendingCallback();
+      if (pending != null) {
+        // Fallback: Jika sistem routing melempar ke Dashboard, kita tangani di sini
+        final uri = Uri(
+          path: '/callback',
+          queryParameters: {
+            'status': pending.status,
+            if (pending.reference != null) 'reference': pending.reference,
+          },
+        );
+        Navigator.pushNamed(context, uri.toString());
+      }
     });
   }
 
@@ -81,6 +94,13 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long_outlined, color: Colors.white),
+            tooltip: 'Histori Pembelian',
+            onPressed: () {
+              Navigator.pushNamed(context, AppRouter.history);
+            },
+          ),
           Consumer<CartProvider>(
             builder: (context, cartProv, _) {
               final count = cartProv.itemCount;
